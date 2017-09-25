@@ -131,13 +131,15 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 	/* Set output pixels and destroy coordinate lists */
 	output = rgbaimg_create(width, height);
 	for (i0 = 0; i0 < height; i0++) {
-		for (j0 = 0; j0 < width; j0++) {
-			if (mapping[i0] != NULL && mapping[i0][j0] != NULL) {
-				_set_out_pixel(input, output, j0, i0, mapping[i0][j0]);
-				clist_destroy(mapping[i0][j0]);
+		if (mapping[i0] != NULL) {
+			for (j0 = 0; j0 < width; j0++) {
+				if (mapping[i0][j0] != NULL) {
+					_set_out_pixel(input, output, j0, i0, mapping[i0][j0]);
+					clist_destroy(mapping[i0][j0]);
+				}
 			}
+			free(mapping[i0]);
 		}
-		free(mapping[i0]);
 	}
 	free(mapping);
 
