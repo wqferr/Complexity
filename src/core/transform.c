@@ -72,13 +72,26 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 	size_t width, height;
 
 	coord c0;
+	/*
+	 * A matrix of lists such that, if
+	 * 	(i0, j0) \in mapping[i1][j1]
+	 * then the complex numbers z0, corresponding to (j0, i0) in the input
+	 * space, and z1, corresponding to (j1, i1), satisfy:
+	 *  z1 = transformation(z0)
+	 *  
+	 * This is used later on to determine the color of a given pixel
+	 * in the output image given the coordinates which hit it.
+	 */
 	coord_list ***mapping;
 
 	rgba_image *output;
 
 	rgbaimg_get_dimensions(input, &width, &height);
+
+	/* All mapping rows set to NULL until it is hit */
 	mapping = calloc(height, sizeof(*mapping));
 
+	/* Loop through a lattice in the input space */
 	for (i0 = 0; i0 < height; i0++) {
 		/* Invert y axis */
 		y0 = (double) (height-1 - i0) / (height-1);
