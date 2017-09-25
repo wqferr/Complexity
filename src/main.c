@@ -4,29 +4,21 @@
 #include "img/rgbaimg.h"
 #include "img/pngio.h"
 
-void print_pixel(rgba_image *img, size_t x, size_t y) {
-	rgba_pixel pixel;
+#include "core/transform.h"
 
-	rgbaimg_get_pixel(img, x, y, &pixel);
-	printf(
-		"(%hhu, %hhu, %hhu, %hhu) ",
-		pixel.r, pixel.g, pixel.b, pixel.a);
+double complex f(double complex z) {
+	return z*z;
 }
 
 int main(int argc, char const *argv[]) {
-	rgba_image *img;
-	int x;
-	size_t w, h;
-	rgba_pixel pixel = {0, 0, 0, 255};
+	rgba_image *in_img;
+	rgba_image *out_img;
 
-	png_load_from_file(&img, "img/0.png");
-	rgbaimg_get_dimensions(img, &w, &h);
+	png_load_from_file(&in_img, "img/1.png");
+	out_img = warp(in_img, &f);
+	png_save_to_file(out_img, "img/out.png");
+	rgbaimg_destroy(in_img);
+	rgbaimg_destroy(out_img);
 
-	for (x = 0; x < w; x++) {
-		rgbaimg_set_pixel(img, x, 0, pixel);
-	}
-
-	png_save_to_file(img, "img/out.png");
-	rgbaimg_destroy(img);
 	return 0;
 }
