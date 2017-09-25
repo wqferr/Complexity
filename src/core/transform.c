@@ -59,6 +59,29 @@ void _set_out_pixel(
 }
 
 rgba_image *warp(const rgba_image *input, warp_f transformation) {
+	return warp_ext(
+		input, transformation,
+		0+0j, 1+1j,
+		0+0j, 1+1j,
+		0, 0);
+}
+
+rgba_image *warp_ext(
+	const rgba_image *input, warp_f transformation,
+	double complex min_in, double complex max_in,
+	double complex min_out, double complex max_out,
+	size_t out_width, size_t out_height) {
+
+	double min_x_in = creal(min_in);
+	double max_x_in = creal(max_in);
+	double min_y_in = cimag(min_in);
+	double max_y_in = cimag(max_in);
+
+	double min_x_out = creal(min_out);
+	double max_x_out = creal(max_out);
+	double min_y_out = cimag(min_out);
+	double max_y_out = cimag(max_out);
+
 	/* Coordinates for scanning input image */
 	double x0, y0;
 	double complex z0;
@@ -69,7 +92,7 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 
 	size_t i0, j0;
 	size_t i1, j1;
-	size_t width, height;
+	size_t in_width, in_height;
 
 	coord c0;
 	/*
@@ -86,17 +109,30 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 
 	rgba_image *output;
 
-	rgbaimg_get_dimensions(input, &width, &height);
+	rgbaimg_get_dimensions(input, &in_width, &in_height);
+
+	if (out_width == 0) {
+		out_width = in_width;
+	}
+	if (out_height == 0) {
+		out_height = in_height;
+	}
 
 	/* All mapping rows set to NULL until it is hit */
-	mapping = calloc(height, sizeof(*mapping));
+	mapping = calloc(out_height, sizeof(*mapping));
 
 	/* Loop through a lattice in the input space */
-	for (i0 = 0; i0 < height; i0++) {
-		/* Invert y axis */
-		y0 = (double) (height-1 - i0) / (height-1);
-		for (j0 = 0; j0 < width; j0++) {
-			x0 = (double) j0 / (width-1);
+	for (i0 = 0; i0 < in_height; i0++) {
+		/* Invert y axis and map to [0, 1] */
+		y0 = (double) (in_height-1 - i0) / (in_height-1);
+		/* Map from [0, 1] to [min_y_in, max_y_in] */
+		y0 = y0 * max_y_in + (1-y0) * min_y_in;
+
+		for (j0 = 0; j0 < in_width; j0++) {
+			/* Map to [0, 1] */
+			x0 = (double) j0 / (in_width-1);
+			/* Map from [0, 1] to [min_x_in, max_x_in] */
+			x0 = x0 * max_x_in + (1-x0) * min_x_in;
 
 			/* Transform coordinates into a complex number */
 			z0 = x0 + 1j*y0;
@@ -106,16 +142,19 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 			x1 = creal(z1);
 			y1 = cimag(z1);
 
+			x1 = (x1-min_x_out) / (max_x_out-min_x_out);
+			y1 = (y1-min_y_out) / (max_y_out-min_y_out);
+
 			/* Output within range */
 			if (0 <= x1 && x1 <= 1 && 0 <= y1 && y1 <= 1) {
 				/* Round to nearest integer */
-				i1 = 0.5 + (height-1) - y1 * (height-1);
-				j1 = 0.5 + x1 * (width-1);
+				i1 = 0.5 + (out_height-1) - y1 * (out_height-1);
+				j1 = 0.5 + x1 * (out_width-1);
 
 
 				/* Create coordinate list if it doesn't exist */
 				if (mapping[i1] == NULL) {
-					mapping[i1] = calloc(width, sizeof(**mapping));
+					mapping[i1] = calloc(out_width, sizeof(**mapping));
 				}
 				if (mapping[i1][j1] == NULL) {
 					mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
@@ -129,10 +168,10 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 	}
 
 	/* Set output pixels and destroy coordinate lists */
-	output = rgbaimg_create(width, height);
-	for (i0 = 0; i0 < height; i0++) {
+	output = rgbaimg_create(out_width, out_height);
+	for (i0 = 0; i0 < out_height; i0++) {
 		if (mapping[i0] != NULL) {
-			for (j0 = 0; j0 < width; j0++) {
+			for (j0 = 0; j0 < out_width; j0++) {
 				if (mapping[i0][j0] != NULL) {
 					_set_out_pixel(input, output, j0, i0, mapping[i0][j0]);
 					clist_destroy(mapping[i0][j0]);
