@@ -1,6 +1,7 @@
 #include "core/transform.h"
 
 #include <stdlib.h>
+#include <omp.h>
 
 #include "struct/coordlist.h"
 
@@ -89,12 +90,13 @@ rgba_image *warp_ext(
 	/* Coordinates for mapping into output image */
 	double x1, y1;
 	double complex z1;
+	
+	coord c0;
 
 	size_t i0, j0;
 	size_t i1, j1;
 	size_t in_width, in_height;
 
-	coord c0;
 	/*
 	 * A matrix of lists such that, if
 	 * 	(i0, j0) \in mapping[i1][j1]
@@ -122,6 +124,9 @@ rgba_image *warp_ext(
 	mapping = calloc(out_height, sizeof(*mapping));
 
 	/* Loop through a lattice in the input space */
+	#pragma omp parallel for\
+				num_threads(8)\
+				private(x0, y0, z0, x1, y1, z1, c0, j0, i1, j1)
 	for (i0 = 0; i0 < in_height; i0++) {
 		/* Invert y axis and map to [0, 1] */
 		y0 = (double) (in_height-1 - i0) / (in_height-1);
@@ -151,18 +156,27 @@ rgba_image *warp_ext(
 				i1 = 0.5 + (out_height-1) - y1 * (out_height-1);
 				j1 = 0.5 + x1 * (out_width-1);
 
+				c0.x = j0;
+				c0.y = i0;
 
 				/* Create coordinate list if it doesn't exist */
 				if (mapping[i1] == NULL) {
-					mapping[i1] = calloc(out_width, sizeof(**mapping));
+					#pragma omp critical (out_hit)
+					{
+						mapping[i1] = calloc(out_width, sizeof(**mapping));
+					}
 				}
 				if (mapping[i1][j1] == NULL) {
-					mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
+					#pragma omp critical (out_hit)
+					{
+						mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
+					}
 				}
 
-				c0.x = j0;
-				c0.y = i0;
-				clist_add(mapping[i1][j1], c0);
+				#pragma omp critical (out_hit)
+				{
+					clist_add(mapping[i1][j1], c0);
+				}
 			}
 		}
 	}

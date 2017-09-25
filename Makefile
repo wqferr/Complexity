@@ -75,7 +75,7 @@ LIBS := png m
 # Compile flags
 #
 
-C_FLAGS = -Wall -Werror -L$(LIB_DIR) -I$(INC_DIR) $(addprefix -l,$(LIBS))
+C_FLAGS = -fopenmp -Wall -Werror -L$(LIB_DIR) -I$(INC_DIR) $(addprefix -l,$(LIBS))
 
 
 #
