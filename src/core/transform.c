@@ -80,21 +80,27 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 	mapping = calloc(height, sizeof(*mapping));
 
 	for (i0 = 0; i0 < height; i0++) {
+		/* Invert y axis */
 		y0 = (double) (height-1 - i0) / (height-1);
 		for (j0 = 0; j0 < width; j0++) {
 			x0 = (double) j0 / (width-1);
 
+			/* Transform coordinates into a complex number */
 			z0 = x0 + 1j*y0;
 
+			/* Apply function */
 			z1 = transformation(z0);
 			x1 = creal(z1);
 			y1 = cimag(z1);
 
+			/* Output within range */
 			if (0 <= x1 && x1 <= 1 && 0 <= y1 && y1 <= 1) {
 				/* Round to nearest integer */
 				i1 = 0.5 + (height-1) - y1 * (height-1);
 				j1 = 0.5 + x1 * (width-1);
 
+
+				/* Create coordinate list if it doesn't exist */
 				if (mapping[i1] == NULL) {
 					mapping[i1] = calloc(width, sizeof(**mapping));
 				}
@@ -109,6 +115,7 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 		}
 	}
 
+	/* Set output pixels and destroy coordinate lists */
 	output = rgbaimg_create(width, height);
 	for (i0 = 0; i0 < height; i0++) {
 		for (j0 = 0; j0 < width; j0++) {
