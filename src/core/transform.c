@@ -125,8 +125,9 @@ rgba_image *warp_ext(
 
 	/* Loop through a lattice in the input space */
 	#pragma omp parallel for\
-				num_threads(8)\
-				private(x0, y0, z0, x1, y1, z1, c0, j0, i1, j1)
+				num_threads(4)\
+				private(x0, y0, z0, x1, y1, z1, c0, j0, i1, j1)\
+				schedule(static)
 	for (i0 = 0; i0 < in_height; i0++) {
 		/* Invert y axis and map to [0, 1] */
 		y0 = (double) (in_height-1 - i0) / (in_height-1);
@@ -160,20 +161,20 @@ rgba_image *warp_ext(
 				c0.y = i0;
 
 				/* Create coordinate list if it doesn't exist */
-				if (mapping[i1] == NULL) {
-					#pragma omp critical (out_hit)
-					{
+				#pragma omp critical
+				{
+					if (mapping[i1] == NULL) {
 						mapping[i1] = calloc(out_width, sizeof(**mapping));
 					}
 				}
-				if (mapping[i1][j1] == NULL) {
-					#pragma omp critical (out_hit)
-					{
+				#pragma omp critical
+				{
+					if (mapping[i1][j1] == NULL) {
 						mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
 					}
 				}
 
-				#pragma omp critical (out_hit)
+				#pragma omp critical
 				{
 					clist_add(mapping[i1][j1], c0);
 				}
