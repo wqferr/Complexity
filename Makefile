@@ -278,6 +278,7 @@ RUN_CMD := gdb $(RUN_CMD)
 debug_mode = yep
 endif
 
+RUN_CMD := $(RUN_CMD) $(ARGS)
 
 ifdef debug_mode
 C_FLAGS += -g
@@ -312,7 +313,6 @@ g: clean all
 
 run:
 	@$(RUN_CMD) | tee $(STDOUT_LOG)
-	@printf "====================\n"
 
 valgrind: run
 
@@ -345,7 +345,7 @@ $(BLD_DIR)/$(OUT): $(OBJECTS)
 	@printf "\n"
 	@printf "====================\n"
 	@printf " COMPILING COMPLETE \n"
-	@printf "====================\n\n"
+	@printf "====================\n"
 
 $(OBJ_DIR)/%.$(COMP_FILE):
 	@printf "Building -%s-... " $(notdir $(basename $<))

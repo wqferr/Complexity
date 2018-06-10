@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <math.h>
 #include <omp.h>
 
@@ -8,22 +10,44 @@
 
 #include "core/transform.h"
 
+#define IMG_PATH_PREFIX "img/"
+#define IMG_PATH_SUFFIX ".png"
+
 double complex f(double complex z) {
-	return ccos(ccos(ccos(z)));
+	return z*z;
 }
 
 int main(int argc, char const *argv[]) {
 	rgba_image *in_img;
 	rgba_image *out_img;
+	size_t width, height;
 	double wtime;
+	const char *imgid;
+	char *path;
 
-	png_load_from_file(&in_img, "img/5_big.png");
+	if (argc > 1) {
+		imgid = argv[1];
+	} else {
+		imgid = "0";
+	}
+	path = calloc(
+		strlen(IMG_PATH_PREFIX)
+		+ strlen(imgid)
+		+ strlen(IMG_PATH_SUFFIX)
+		+ 1,
+		sizeof(char));
+	strcpy(path, IMG_PATH_PREFIX);
+	strcat(path, imgid);
+	strcat(path, IMG_PATH_SUFFIX);
+
+	png_load_from_file(&in_img, path);
+	rgbaimg_get_dimensions(in_img, &width, &height);
 	wtime = omp_get_wtime();
 	out_img = warp_ext(
 		in_img, &f,
-		0+0j, 2*M_PI*(1+1j),
-		-2-2j, 2+2j,
-		0, 0);
+		(-1-1i), (1+1i),
+		(-1-1i), (1+1i),
+		width/16, height/16);
 	wtime = omp_get_wtime() - wtime;
 	printf("%.2lf\n", wtime);
 	png_save_to_file(out_img, "img/out.png");
