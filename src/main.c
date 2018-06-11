@@ -10,7 +10,7 @@
 #include "img/rgbaimg.h"
 #include "img/pngio.h"
 
-#include "core/transform.h"
+#include "core/cfunction.h"
 
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
