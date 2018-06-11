@@ -53,6 +53,7 @@ int main(int argc, char const *argv[]) {
 	png_save_to_file(out_img, "img/out.png");
 	rgbaimg_destroy(in_img);
 	rgbaimg_destroy(out_img);
+	free(path);
 
 	return 0;
 }
