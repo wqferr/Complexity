@@ -314,6 +314,9 @@ g: clean all
 run:
 	@$(RUN_CMD) | tee $(STDOUT_LOG)
 
+video:
+	ffmpeg -y -framerate 60 -i img/out/%03d.png -c:v libx264 -pix_fmt yuv420p img/out.mp4
+
 valgrind: run
 
 gdb: run
