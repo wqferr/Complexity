@@ -12,12 +12,14 @@
 
 #include "core/cfunction.h"
 
+#include "util/interpolation.h"
+
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
 
 double complex f(double complex z, const void *arg) {
 	float t = *((float *) arg);
-	return t * ((-z*z)/2 - (ccos(z)-1)) + (1-t) * z;
+	return clerp(z, ccos(z), t);
 }
 
 rgba_image *read_input_img(int argc, char *const argv[]);
@@ -108,7 +110,8 @@ float time(size_t frame, size_t n_frames) {
 	if (frame == 0) {
 		return 0;
 	}
-	t = (float) frame / n_frames;
-	t = t * (SIGMOID_END - SIGMOID_START) + SIGMOID_START;
+	t = lerp(SIGMOID_START, SIGMOID_END, (double) frame / n_frames);
+	// t = (float) frame / n_frames;
+	// t = t * (SIGMOID_END - SIGMOID_START) + SIGMOID_START;
 	return 1.0f / (1 + exp(STEEPNESS * (-t)));
 }
