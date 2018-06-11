@@ -15,33 +15,29 @@
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
 
-double complex interp_square(double complex z, const void *arg) {
+double complex f(double complex z, const void *arg) {
 	float t = *((float *) arg);
-	return t * cpow(z, 2) + (1-t) * z;
+	return t * ((-z*z)/2 - (ccos(z)-1)) + (1-t) * z;
 }
 
 rgba_image *read_input_img(int argc, char *const argv[]);
 void save_frame(rgba_image *frame, size_t n);
+float time(size_t frame, size_t n_frames);
 float sigmoid(float t);
 
 int main(int argc, char *const argv[]) {
 	rgba_image *in_img;
 	rgba_image *out_img;
-	float interp_time, interp_time_step, interp_start_time, interp_end_time;
+	float interp_time;
 	size_t n_frames, cur_frame;
 	size_t inwidth, inheight;
 	size_t outwidth, outheight;
-
-	interp_start_time = -5;
-	interp_end_time = 15;
 
 	in_img = read_input_img(argc, argv);
 	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
 	if (getopt(argc, argv, "n:") != -1) {
 		n_frames = atoi(optarg);
 	}
-
-	interp_time_step = (interp_end_time - interp_start_time) / (n_frames-1);
 
 	outwidth = inwidth;
 	outheight = inheight;
@@ -53,12 +49,12 @@ int main(int argc, char *const argv[]) {
 	#pragma omp parallel for\
 		num_threads(8)\
 		private(out_img, interp_time)\
-		shared(in_img, interp_start_time, interp_time_step)
+		shared(in_img)
 	for (cur_frame = 0; cur_frame < n_frames; cur_frame++) {
 		fprintf(stderr, "Processing frame %zu\n", cur_frame);
-		interp_time = sigmoid(interp_start_time + cur_frame * interp_time_step);
+		interp_time = time(cur_frame, n_frames);
 		out_img = warp_ext(
-			in_img, &interp_square, &interp_time,
+			in_img, &f, &interp_time,
 			(-1-1i), (1+1i),
 			(-1-1i), (1+1i),
 			outwidth, outheight);
@@ -104,6 +100,15 @@ void save_frame(rgba_image *frame, size_t n) {
 }
 
 
-float sigmoid(float t) {
-	return 1.0f / (1 + exp(-t));
+#define STEEPNESS 1
+#define SIGMOID_START -10
+#define SIGMOID_END 15
+float time(size_t frame, size_t n_frames) {
+	float t;
+	if (frame == 0) {
+		return 0;
+	}
+	t = (float) frame / n_frames;
+	t = t * (SIGMOID_END - SIGMOID_START) + SIGMOID_START;
+	return 1.0f / (1 + exp(STEEPNESS * (-t)));
 }
