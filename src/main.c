@@ -22,14 +22,18 @@ double complex interp_square(double complex z, const void *arg) {
 
 rgba_image *read_input_img(int argc, char *const argv[]);
 void save_frame(rgba_image *frame, size_t n);
+float sigmoid(float t);
 
 int main(int argc, char *const argv[]) {
 	rgba_image *in_img;
 	rgba_image *out_img;
-	float interp_time, interp_time_step;
+	float interp_time, interp_time_step, interp_start_time, interp_end_time;
 	size_t n_frames, cur_frame;
 	size_t inwidth, inheight;
 	size_t outwidth, outheight;
+
+	interp_start_time = -5;
+	interp_end_time = 15;
 
 	in_img = read_input_img(argc, argv);
 	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
@@ -37,8 +41,7 @@ int main(int argc, char *const argv[]) {
 		n_frames = atoi(optarg);
 	}
 
-	interp_time = 0.0f;
-	interp_time_step = 1.0f / (n_frames-1);
+	interp_time_step = (interp_end_time - interp_start_time) / (n_frames-1);
 
 	outwidth = inwidth;
 	outheight = inheight;
@@ -47,10 +50,13 @@ int main(int argc, char *const argv[]) {
 	
 	system("rm -f " IMG_PATH_PREFIX "out/*" IMG_PATH_SUFFIX);
 
-	#pragma omp parallel for private(out_img, interp_time) shared(in_img)
+	#pragma omp parallel for\
+		num_threads(8)\
+		private(out_img, interp_time)\
+		shared(in_img, interp_start_time, interp_time_step)
 	for (cur_frame = 0; cur_frame < n_frames; cur_frame++) {
 		fprintf(stderr, "Processing frame %zu\n", cur_frame);
-		interp_time = cur_frame * interp_time_step;
+		interp_time = sigmoid(interp_start_time + cur_frame * interp_time_step);
 		out_img = warp_ext(
 			in_img, &interp_square, &interp_time,
 			(-1-1i), (1+1i),
@@ -95,4 +101,9 @@ void save_frame(rgba_image *frame, size_t n) {
 	sprintf(path, "%sout/%03zu%s", IMG_PATH_PREFIX, n, IMG_PATH_SUFFIX);
 	png_save_to_file(frame, path);
 	free(path);
+}
+
+
+float sigmoid(float t) {
+	return 1.0f / (1 + exp(-t));
 }
