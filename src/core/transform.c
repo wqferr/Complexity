@@ -61,14 +61,14 @@ void _set_out_pixel(
 
 rgba_image *warp(const rgba_image *input, warp_f transformation) {
 	return warp_ext(
-		input, transformation,
+		input, transformation, NULL,
 		0+0j, 1+1j,
 		0+0j, 1+1j,
 		0, 0);
 }
 
 rgba_image *warp_ext(
-	const rgba_image *input, warp_f transformation,
+	const rgba_image *input, warp_f transformation, const void *arg,
 	double complex min_in, double complex max_in,
 	double complex min_out, double complex max_out,
 	size_t out_width, size_t out_height) {
@@ -144,7 +144,7 @@ rgba_image *warp_ext(
 			z0 = x0 + 1j*y0;
 
 			/* Apply function */
-			z1 = transformation(z0);
+			z1 = transformation(z0, arg);
 			x1 = creal(z1);
 			y1 = cimag(z1);
 

@@ -13,8 +13,9 @@
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
 
-double complex f(double complex z) {
-	return z*z;
+double complex f(double complex z, const void *arg) {
+	(void) arg;
+	return cpow(z, 2);
 }
 
 int main(int argc, char const *argv[]) {
@@ -44,10 +45,10 @@ int main(int argc, char const *argv[]) {
 	rgbaimg_get_dimensions(in_img, &width, &height);
 	wtime = omp_get_wtime();
 	out_img = warp_ext(
-		in_img, &f,
+		in_img, &f, NULL,
 		(-1-1i), (1+1i),
 		(-1-1i), (1+1i),
-		width/16, height/16);
+		width/4, height/4);
 	wtime = omp_get_wtime() - wtime;
 	printf("%.2lf\n", wtime);
 	png_save_to_file(out_img, "img/out.png");
