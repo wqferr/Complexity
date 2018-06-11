@@ -239,7 +239,8 @@ case_ofile = $(1:%=%.out)
 
 
 .PHONY: all run test clean arun rebrun rebuild zip tree\
-        destroy-tree-yes-i-am-sure valgrind gdb g
+        destroy-tree-yes-i-am-sure valgrind gdb g\
+		video
 
 # Find all source files
 SOURCES := $(shell find $(SRC_DIR) -name $(SRC_PTRN) 2> /dev/null)
