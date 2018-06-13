@@ -12,44 +12,55 @@
 
 #include "core/cfunction.h"
 
+#include "anim/anim.h"
+
 #include "util/interpolation.h"
+#include "util/misc.h"
 
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
 
+#define FRAMES_OUTPUT_DIR "img/out/"
+
+
 double complex f(double complex z, const void *arg) {
-	float t = *((float *) arg);
-	return clerp(z, ccos(z), t);
+	double t = *((const double *) arg);
+	return cpow(z, clerp(1, 0.25, t));
 }
 
+void clean_dir(const char *path);
+
 rgba_image *read_input_img(int argc, char *const argv[]);
-void save_frame(rgba_image *frame, size_t n);
-float time(size_t frame, size_t n_frames);
-float sigmoid(float t);
+rgba_image *create_frame(const void *arg, double progress);
 
 int main(int argc, char *const argv[]) {
 	rgba_image *in_img;
-	rgba_image *out_img;
-	float interp_time;
-	size_t n_frames, cur_frame;
+	size_t n_frames;
 	size_t inwidth, inheight;
-	size_t outwidth, outheight;
 
 	in_img = read_input_img(argc, argv);
 	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
 	if (getopt(argc, argv, "n:") != -1) {
 		n_frames = atoi(optarg);
 	}
-
+/*
 	outwidth = inwidth;
 	outheight = inheight;
+	*/
 
 	omp_set_nested(true);
 	
-	system("rm -f " IMG_PATH_PREFIX "out/*" IMG_PATH_SUFFIX);
+	clean_dir(FRAMES_OUTPUT_DIR);
 
+	animate(
+		&create_frame, in_img,
+		&anim_time_smootheststep, n_frames,
+		"img/out/");
+
+	
+/*
 	#pragma omp parallel for\
-		num_threads(8)\
+		num_threads(4)\
 		private(out_img, interp_time)\
 		shared(in_img)
 	for (cur_frame = 0; cur_frame < n_frames; cur_frame++) {
@@ -63,7 +74,7 @@ int main(int argc, char *const argv[]) {
 		save_frame(out_img, cur_frame);
 		rgbaimg_destroy(out_img);
 	}
-
+*/
 	rgbaimg_destroy(in_img);
 	return 0;
 }
@@ -72,16 +83,19 @@ int main(int argc, char *const argv[]) {
 rgba_image *read_input_img(int argc, char *const argv[]) {
 	char *imgid;
 	char *path;
-	size_t pathsize;
+	/* size_t pathsize; */
 	rgba_image *input;
 
 	if (getopt(argc, argv, "i:") != -1) {
 		imgid = strdup(optarg);
 	}
 
+	sprintf_alloc(&path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
+/*
 	pathsize = snprintf(NULL, 0, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
 	path = malloc((pathsize + 1) * sizeof(*path));
 	sprintf(path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
+	*/
 	png_load_from_file(&input, path);
 
 	free(imgid);
@@ -89,7 +103,25 @@ rgba_image *read_input_img(int argc, char *const argv[]) {
 	return input;
 }
 
+rgba_image *create_frame(const void *arg, double progress) {
+	size_t w, h;
+	const rgba_image *input = (const rgba_image *) arg;
+	rgbaimg_get_dimensions(input, &w, &h);
+	return warp_ext(
+		input, &f, &progress,
+		(-1-1i), (+1+1i),
+		(-1-1i), (+1+1i),
+		w, h);
+}
 
+void clean_dir(const char *path) {
+	char *cmd;
+	sprintf_alloc(&cmd, "rm -f %s/* --preserve-root", path);
+	system(cmd);
+	free(cmd);
+}
+
+/*
 void save_frame(rgba_image *frame, size_t n) {
 	char *path;
 	size_t pathsize;
@@ -111,7 +143,5 @@ float time(size_t frame, size_t n_frames) {
 		return 0;
 	}
 	t = lerp(SIGMOID_START, SIGMOID_END, (double) frame / n_frames);
-	// t = (float) frame / n_frames;
-	// t = t * (SIGMOID_END - SIGMOID_START) + SIGMOID_START;
 	return 1.0f / (1 + exp(STEEPNESS * (-t)));
-}
+}*/

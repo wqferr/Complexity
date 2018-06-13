@@ -239,8 +239,7 @@ case_ofile = $(1:%=%.out)
 
 
 .PHONY: all run test clean arun rebrun rebuild zip tree\
-        destroy-tree-yes-i-am-sure valgrind gdb g\
-		video mp4
+        destroy-tree-yes-i-am-sure valgrind gdb g
 
 # Find all source files
 SOURCES := $(shell find $(SRC_DIR) -name $(SRC_PTRN) 2> /dev/null)
@@ -315,10 +314,6 @@ g: clean all
 run:
 	@$(RUN_CMD) | tee $(STDOUT_LOG)
 
-video: arun mp4
-
-mp4:
-	ffmpeg -y -framerate 60 -i img/out/%03d.png -c:v libx264 -pix_fmt yuv420p img/out.mp4
 
 valgrind: run
 
