@@ -57,7 +57,7 @@ void _set_out_pixel(
 	rgbaimg_set_pixel(output, x, y, out_pixel);
 }
 
-rgba_image *warp(const rgba_image *input, warp_f transformation) {
+rgba_image *warp(const rgba_image *input, complex_f transformation) {
 	return warp_ext(
 		input, transformation, NULL,
 		0+0j, 1+1j,
@@ -66,7 +66,7 @@ rgba_image *warp(const rgba_image *input, warp_f transformation) {
 }
 
 rgba_image *warp_ext(
-	const rgba_image *input, warp_f transformation, const void *arg,
+	const rgba_image *input, complex_f transformation, const void *arg,
 	double complex min_in, double complex max_in,
 	double complex min_out, double complex max_out,
 	size_t out_width, size_t out_height) {
@@ -196,4 +196,42 @@ rgba_image *warp_ext(
 	free(mapping);
 
 	return output;
+}
+
+
+void imprint(rgba_image *canvas, color_f color) {
+	imprint_ext(
+		canvas,
+		color, NULL,
+		(-1-1i), (+1+1i));
+}
+
+void imprint_ext(
+		rgba_image *canvas,
+		color_f color, const void *arg,
+		double complex min, double complex max) {
+	size_t width, height;
+	size_t i, j;
+	double x, y;
+	double complex z;
+	double min_x, max_x;
+	double min_y, max_y;
+
+	min_x = creal(min);
+	max_x = creal(max);
+	min_y = cimag(min);
+	max_y = cimag(max);
+
+	rgbaimg_get_dimensions(canvas, &width, &height);
+	for (i = 0; i < height; i++) {
+		y = (double) (height-1 - i) / (height-1);
+		y = y * max_y + (1-y) * min_y;
+		for (j = 0; j < width; j++) {
+			x = (double) j / (width-1);
+			x = x * max_x + (1-x) * min_x;
+
+			z = x + y*1i;
+			rgbaimg_set_pixel(canvas, j, i, color(z, arg));
+		}
+	}
 }
