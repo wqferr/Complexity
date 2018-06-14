@@ -29,12 +29,34 @@ double complex f(double complex z, const void *arg) {
 	return cpow(z, clerp(2, 1, t));
 }
 
+rgba_pixel imprint_x2(double complex z, const void *arg) {
+	rgba_pixel out = { .r = 0, .g = 0, .b = 0, .a = 255 };
+	double margin = *((const double *) arg);
+	double x = creal(z);
+	double y = cimag(z);
+
+	if (fabs(x*x - y) < margin) {
+		out.r = 255;
+		out.g = 255;
+		out.b = 255;
+	}
+
+	return out;
+}
+
 void clean_dir(const char *path);
 
 rgba_image *read_input_img(int argc, char *const argv[]);
 rgba_image *create_frame(const void *arg, double progress);
 
+int main_test_imprint(int argc, char *const argv[]);
+int main_create_warp_anim(int argc, char *const argv[]);
+
 int main(int argc, char *const argv[]) {
+	return main_test_imprint(argc, argv);
+}
+
+int main_create_warp_anim(int argc, char *const argv[]) {
 	rgba_image *in_img;
 	float out_duration;
 	size_t n_frames;
@@ -57,6 +79,18 @@ int main(int argc, char *const argv[]) {
 		"img/out/");
 
 	rgbaimg_destroy(in_img);
+	return 0;
+}
+
+int main_test_imprint(int argc, char *const argv[]) {
+	rgba_image *out;
+	double margin = 0.05;
+
+	out = rgbaimg_create(500, 500);
+	imprint_ext(out, &imprint_x2, &margin, (-1+0i), (+1+1i));
+	png_save_to_file(out, "img/imprint.png");
+	rgbaimg_destroy(out);
+
 	return 0;
 }
 
