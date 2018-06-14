@@ -43,10 +43,6 @@ int main(int argc, char *const argv[]) {
 	if (getopt(argc, argv, "n:") != -1) {
 		n_frames = atoi(optarg);
 	}
-/*
-	outwidth = inwidth;
-	outheight = inheight;
-	*/
 
 	omp_set_nested(true);
 	
@@ -57,24 +53,6 @@ int main(int argc, char *const argv[]) {
 		&anim_time_smootheststep, n_frames,
 		"img/out/");
 
-	
-/*
-	#pragma omp parallel for\
-		num_threads(4)\
-		private(out_img, interp_time)\
-		shared(in_img)
-	for (cur_frame = 0; cur_frame < n_frames; cur_frame++) {
-		fprintf(stderr, "Processing frame %zu\n", cur_frame);
-		interp_time = time(cur_frame, n_frames);
-		out_img = warp_ext(
-			in_img, &f, &interp_time,
-			(-1-1i), (1+1i),
-			(-1-1i), (1+1i),
-			outwidth, outheight);
-		save_frame(out_img, cur_frame);
-		rgbaimg_destroy(out_img);
-	}
-*/
 	rgbaimg_destroy(in_img);
 	return 0;
 }
