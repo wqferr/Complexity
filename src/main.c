@@ -21,11 +21,12 @@
 #define IMG_PATH_SUFFIX ".png"
 
 #define FRAMES_OUTPUT_DIR "img/out/"
+#define OUTPUT_FPS 60
 
 
 double complex f(double complex z, const void *arg) {
 	double t = *((const double *) arg);
-	return cpow(z, clerp(1, 0.25, t));
+	return cpow(z, clerp(2, 1, t));
 }
 
 void clean_dir(const char *path);
@@ -35,13 +36,15 @@ rgba_image *create_frame(const void *arg, double progress);
 
 int main(int argc, char *const argv[]) {
 	rgba_image *in_img;
+	float out_duration;
 	size_t n_frames;
 	size_t inwidth, inheight;
 
 	in_img = read_input_img(argc, argv);
 	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
-	if (getopt(argc, argv, "n:") != -1) {
-		n_frames = atoi(optarg);
+	if (getopt(argc, argv, "t:") != -1) {
+		sscanf(optarg, "%f", &out_duration);
+		n_frames = out_duration * OUTPUT_FPS;
 	}
 
 	omp_set_nested(true);
