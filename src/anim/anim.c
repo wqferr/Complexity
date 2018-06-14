@@ -37,7 +37,7 @@ void animate(
             fprintf(stderr, "Creating frame %d\n", cur_frame);
         }
         progress = smooth((double) cur_frame / n_frames);
-        output = create_frame(arg, progress);
+        output = create_frame(progress, arg);
         _save_frame(output, cur_frame, n_frames, out_dir, &len_n_frames);
     }
     fprintf(stderr, "Done creating frames\n");

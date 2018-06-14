@@ -24,9 +24,19 @@
 #define OUTPUT_FPS 60
 
 
+double complex cexp_taylor(double complex z, double t) {
+	double complex out = clerp(0, 1, t) + z;
+	int i, f = 1;
+	for (i = 2; i < 10; i++) {
+		f *= i;
+		out += clerp(0, cpow(z, i)/f, t);
+	}
+	return out;
+}
+
 double complex f(double complex z, const void *arg) {
 	double t = *((const double *) arg);
-	return cpow(z, clerp(2, 1, t));
+	return cexp_taylor(z, t);
 }
 
 rgba_pixel imprint_x2(double complex z, const void *arg) {
@@ -47,13 +57,13 @@ rgba_pixel imprint_x2(double complex z, const void *arg) {
 void clean_dir(const char *path);
 
 rgba_image *read_input_img(int argc, char *const argv[]);
-rgba_image *create_frame(const void *arg, double progress);
+rgba_image *create_frame(double progress, const void *arg);
 
 int main_test_imprint(int argc, char *const argv[]);
 int main_create_warp_anim(int argc, char *const argv[]);
 
 int main(int argc, char *const argv[]) {
-	return main_test_imprint(argc, argv);
+	return main_create_warp_anim(argc, argv);
 }
 
 int main_create_warp_anim(int argc, char *const argv[]) {
@@ -112,14 +122,14 @@ rgba_image *read_input_img(int argc, char *const argv[]) {
 	return input;
 }
 
-rgba_image *create_frame(const void *arg, double progress) {
+rgba_image *create_frame(double progress, const void *arg) {
 	size_t w, h;
 	const rgba_image *input = (const rgba_image *) arg;
 	rgbaimg_get_dimensions(input, &w, &h);
 	return warp_ext(
 		input, &f, &progress,
-		(-1-1i), (+1+1i),
-		(-1-1i), (+1+1i),
+		(-M_PI - M_PI*1i), (+M_PI + M_PI*1i),
+		(-4-4i), (+4+4i),
 		w, h);
 }
 

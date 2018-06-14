@@ -3,7 +3,7 @@
 
 #include "img/rgbaimg.h"
 
-typedef rgba_image *(*create_frame_f)(const void *arg, double progress);
+typedef rgba_image *(*create_frame_f)(double progress, const void *arg);
 typedef double (*time_smoothing_f)(double progress);
 
 void animate(
