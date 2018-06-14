@@ -61,7 +61,6 @@ int main(int argc, char *const argv[]) {
 rgba_image *read_input_img(int argc, char *const argv[]) {
 	char *imgid;
 	char *path;
-	/* size_t pathsize; */
 	rgba_image *input;
 
 	if (getopt(argc, argv, "i:") != -1) {
@@ -69,11 +68,6 @@ rgba_image *read_input_img(int argc, char *const argv[]) {
 	}
 
 	sprintf_alloc(&path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
-/*
-	pathsize = snprintf(NULL, 0, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
-	path = malloc((pathsize + 1) * sizeof(*path));
-	sprintf(path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
-	*/
 	png_load_from_file(&input, path);
 
 	free(imgid);
@@ -98,28 +92,3 @@ void clean_dir(const char *path) {
 	system(cmd);
 	free(cmd);
 }
-
-/*
-void save_frame(rgba_image *frame, size_t n) {
-	char *path;
-	size_t pathsize;
-
-	pathsize = snprintf(NULL, 0, "%sout/%03zu%s", IMG_PATH_PREFIX, n, IMG_PATH_SUFFIX);
-	path = malloc((pathsize + 1) * sizeof(*path));
-	sprintf(path, "%sout/%03zu%s", IMG_PATH_PREFIX, n, IMG_PATH_SUFFIX);
-	png_save_to_file(frame, path);
-	free(path);
-}
-
-
-#define STEEPNESS 1
-#define SIGMOID_START -10
-#define SIGMOID_END 15
-float time(size_t frame, size_t n_frames) {
-	float t;
-	if (frame == 0) {
-		return 0;
-	}
-	t = lerp(SIGMOID_START, SIGMOID_END, (double) frame / n_frames);
-	return 1.0f / (1 + exp(STEEPNESS * (-t)));
-}*/
