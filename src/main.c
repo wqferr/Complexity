@@ -16,6 +16,7 @@
 
 #include "util/interpolation.h"
 #include "util/misc.h"
+#include "util/imprint.h"
 
 #define IMG_PATH_PREFIX "img/"
 #define IMG_PATH_SUFFIX ".png"
@@ -63,7 +64,7 @@ int main_test_imprint(int argc, char *const argv[]);
 int main_create_warp_anim(int argc, char *const argv[]);
 
 int main(int argc, char *const argv[]) {
-	return main_create_warp_anim(argc, argv);
+	return main_test_imprint(argc, argv);
 }
 
 int main_create_warp_anim(int argc, char *const argv[]) {
@@ -94,10 +95,12 @@ int main_create_warp_anim(int argc, char *const argv[]) {
 
 int main_test_imprint(int argc, char *const argv[]) {
 	rgba_image *out;
-	double margin = 0.05;
+	rgba_pixel color = {.r = 255, .g = 255, .b = 255, .a = 255};
 
 	out = rgbaimg_create(500, 500);
-	imprint_ext(out, &imprint_x2, &margin, (-1+0i), (+1+1i));
+	imprint_line(out, (-1-1i), (+1+1i),
+		color, 0.1,
+		1, -1, 0);
 	png_save_to_file(out, "img/imprint.png");
 	rgbaimg_destroy(out);
 

@@ -220,14 +220,14 @@ rgba_image *warp_ext(
 void imprint(rgba_image *canvas, color_f color) {
 	imprint_ext(
 		canvas,
-		color, NULL,
-		(-1-1i), (+1+1i));
+		(-1-1i), (+1+1i),
+		color, NULL);
 }
 
 void imprint_ext(
 		rgba_image *canvas,
-		color_f color, const void *arg,
-		double complex min, double complex max) {
+		double complex min, double complex max,
+		color_f color, const void *arg) {
 	size_t width, height;
 	size_t i, j;
 	double complex z;
