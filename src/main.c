@@ -95,7 +95,7 @@ int main_create_warp_anim(int argc, char *const argv[]) {
 
 int main_test_imprint(int argc, char *const argv[]) {
 	rgba_image *out;
-	rgba_pixel white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+	rgba_pixel white = { .r = 255, .g = 255, .b = 255, .a = 127 };
 	rgba_pixel black = { .r = 0, .g = 0, .b = 0, .a = 255 };
 
 	out = rgbaimg_create(500, 500);

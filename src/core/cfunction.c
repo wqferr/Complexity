@@ -231,15 +231,22 @@ void imprint_ext(
 	size_t width, height;
 	size_t i, j;
 	double complex z;
-	rgba_pixel pixel;
+	double alpha;
+	rgba_pixel cur_pixel, new_pixel;
 
 	rgbaimg_get_dimensions(canvas, &width, &height);
 	for (i = 0; i < height; i++) {
 		for (j = 0; j < width; j++) {
 			z = coord_to_complex(canvas, j, i, min, max);
-			rgbaimg_get_pixel(canvas, j, i, &pixel);
-			color(&pixel, z, arg);
-			rgbaimg_set_pixel(canvas, j, i, pixel);
+			rgbaimg_get_pixel(canvas, j, i, &cur_pixel);
+			new_pixel = cur_pixel;
+			color(&new_pixel, z, arg);
+			alpha = (double) new_pixel.a / UINT8_MAX;
+			new_pixel.r = alpha * new_pixel.r + (1-alpha) * cur_pixel.r;
+			new_pixel.g = alpha * new_pixel.g + (1-alpha) * cur_pixel.g;
+			new_pixel.b = alpha * new_pixel.b + (1-alpha) * cur_pixel.b;
+			new_pixel.a = cur_pixel.a;
+			rgbaimg_set_pixel(canvas, j, i, new_pixel);
 		}
 	}
 }

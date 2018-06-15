@@ -20,10 +20,16 @@ struct rgba_image {
 };
 
 rgba_image *rgbaimg_create(size_t w, size_t h) {
+	size_t i, n;
 	rgba_image *img = malloc(sizeof(*img));
 	img->pixels = calloc(w * h, sizeof(*img->pixels));
 	img->width = w;
 	img->height = h;
+
+	n = w*h;
+	for (i = 0; i < n; i++) {
+		img->pixels[i].a = UINT8_MAX;
+	}
 
 	return img;
 }
