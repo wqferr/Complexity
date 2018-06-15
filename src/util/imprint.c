@@ -9,23 +9,19 @@ typedef struct {
 
     double margin;
     rgba_pixel color;
-    
+
     double complex min;
     double complex max;
 } imprint_line_data;
 
-rgba_pixel _do_imprint_line(double complex z, const void *arg) {
+void _do_imprint_line(rgba_pixel *out, double complex z, const void *arg) {
     imprint_line_data data = *((const imprint_line_data *) arg);
-    rgba_pixel out = data.color;
     double x = creal(z);
     double y = cimag(z);
 
-    out.a = 0;
-
     if (fabs(x*data.x_coeff + y*data.y_coeff + data.indep_coeff) < data.margin) {
-        out.a = 255;
+        *out = data.color;
     }
-    return out;
 }
 
 void imprint_line(

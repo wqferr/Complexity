@@ -7,7 +7,7 @@
 #include "img/rgbaimg.h"
 
 typedef double complex (*complex_f)(double complex z, const void *arg);
-typedef rgba_pixel (*color_f)(double complex z, const void *arg);
+typedef void (*color_f)(rgba_pixel *out, double complex z, const void *arg);
 
 double complex coord_to_complex(
 	const rgba_image *img,

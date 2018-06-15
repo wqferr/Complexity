@@ -101,6 +101,9 @@ int main_test_imprint(int argc, char *const argv[]) {
 	imprint_line(out, (-1-1i), (+1+1i),
 		color, 0.1,
 		1, -1, 0);
+	imprint_line(out, (-1-1i), (+1+1i),
+		color, 0.1,
+		1, 1, 0);
 	png_save_to_file(out, "img/imprint.png");
 	rgbaimg_destroy(out);
 
