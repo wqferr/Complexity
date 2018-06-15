@@ -95,14 +95,21 @@ int main_create_warp_anim(int argc, char *const argv[]) {
 
 int main_test_imprint(int argc, char *const argv[]) {
 	rgba_image *out;
-	rgba_pixel color = {.r = 255, .g = 255, .b = 255, .a = 255};
+	rgba_pixel white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+	rgba_pixel black = { .r = 0, .g = 0, .b = 0, .a = 255 };
 
 	out = rgbaimg_create(500, 500);
-	imprint_line(out, (-1-1i), (+1+1i),
-		color, 0.1,
+	imprint_rect(
+		out, (-1-1i), (+1+1i),
+		black,
+		(-0.5-0.5i), (+0.5+0.5i));
+	imprint_line(
+		out, (-1-1i), (+1+1i),
+		white, 0.1,
 		1, -1, 0);
-	imprint_line(out, (-1-1i), (+1+1i),
-		color, 0.1,
+	imprint_line(
+		out, (-1-1i), (+1+1i),
+		white, 0.1,
 		1, 1, 0);
 	png_save_to_file(out, "img/imprint.png");
 	rgbaimg_destroy(out);
