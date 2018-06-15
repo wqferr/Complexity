@@ -57,6 +57,55 @@ void _set_out_pixel(
 	rgbaimg_set_pixel(output, x, y, out_pixel);
 }
 
+
+double complex coord_to_complex(
+		const rgba_image *img,
+		size_t inx, size_t iny,
+		double complex min, double complex max) {
+	size_t w, h;
+	double tx, ty;
+	double x, y;
+	double x_min = creal(min);
+	double x_max = creal(max);
+	double y_min = cimag(min);
+	double y_max = cimag(max);
+
+	rgbaimg_get_dimensions(img, &w, &h);
+	tx = (double) inx / w;
+	ty = 1 - (double) iny / h;
+
+	y = (1-ty)*y_min + ty*y_max;
+	x = (1-tx)*x_min + tx*x_max;
+	return x + y*1i;
+}
+
+bool complex_to_coord(
+		const rgba_image *img,
+		double complex z,
+		double complex min, double complex max,
+		size_t *outx, size_t *outy) {
+	size_t w, h;
+	double tx, ty;
+	double x = creal(z);
+	double y = cimag(z);
+	double x_min = creal(min);
+	double x_max = creal(max);
+	double y_min = cimag(min);
+	double y_max = cimag(max);
+
+	rgbaimg_get_dimensions(img, &w, &h);
+	tx = (x - x_min) / (x_max - x_min);
+	ty = (y - y_min) / (y_max - y_min);
+
+	if (tx < 0 || ty < 0 || tx >= 1 || ty >= 1) {
+		return false;
+	}
+	*outx = (size_t) (0.5 + (tx*w));
+	*outy = (size_t) (0.5 + ((1-ty) * h));
+
+	return true;
+}
+
 rgba_image *warp(const rgba_image *input, complex_f transformation) {
 	return warp_ext(
 		input, transformation, NULL,
@@ -70,30 +119,18 @@ rgba_image *warp_ext(
 	double complex min_in, double complex max_in,
 	double complex min_out, double complex max_out,
 	size_t out_width, size_t out_height) {
-
-	double min_x_in = creal(min_in);
-	double max_x_in = creal(max_in);
-	double min_y_in = cimag(min_in);
-	double max_y_in = cimag(max_in);
-
-	double min_x_out = creal(min_out);
-	double max_x_out = creal(max_out);
-	double min_y_out = cimag(min_out);
-	double max_y_out = cimag(max_out);
-
 	/* Coordinates for scanning input image */
-	double x0, y0;
 	double complex z0;
-
 	/* Coordinates for mapping into output image */
-	double x1, y1;
 	double complex z1;
 	
 	coord c0;
 
+	size_t idx;
 	size_t i0, j0;
 	size_t i1, j1;
 	size_t in_width, in_height;
+	size_t in_n_pixels;
 
 	/*
 	 * A matrix of lists such that, if
@@ -110,6 +147,9 @@ rgba_image *warp_ext(
 	rgba_image *output;
 
 	rgbaimg_get_dimensions(input, &in_width, &in_height);
+	output = rgbaimg_create(out_width, out_height);
+
+	in_n_pixels = in_width * in_height;
 
 	if (out_width == 0) {
 		out_width = in_width;
@@ -124,64 +164,42 @@ rgba_image *warp_ext(
 	/* Loop through a lattice in the input space */
 	#pragma omp parallel for\
 				num_threads(4)\
-				private(x0, y0, z0, x1, y1, z1, c0, j0, i1, j1)\
+				private(z0, z1, c0, i0, j0, i1, j1)\
 				schedule(static)
-	for (i0 = 0; i0 < in_height; i0++) {
-		/* Invert y axis and map to [0, 1] */
-		y0 = (double) (in_height-1 - i0) / (in_height-1);
-		/* Map from [0, 1] to [min_y_in, max_y_in] */
-		y0 = y0 * max_y_in + (1-y0) * min_y_in;
+	for (idx = 0; idx < in_n_pixels; idx++) {
+		i0 = idx / in_width;
+		j0 = idx % in_width;
 
-		for (j0 = 0; j0 < in_width; j0++) {
-			/* Map to [0, 1] */
-			x0 = (double) j0 / (in_width-1);
-			/* Map from [0, 1] to [min_x_in, max_x_in] */
-			x0 = x0 * max_x_in + (1-x0) * min_x_in;
+		z0 = coord_to_complex(input, j0, i0, min_in, max_in);
 
-			/* Transform coordinates into a complex number */
-			z0 = x0 + 1j*y0;
+		/* Apply function */
+		z1 = transformation(z0, arg);
+		if (complex_to_coord(output, z1, min_out, max_out, &j1, &i1)) {
+			c0.x = j0;
+			c0.y = i0;
 
-			/* Apply function */
-			z1 = transformation(z0, arg);
-			x1 = creal(z1);
-			y1 = cimag(z1);
-
-			x1 = (x1-min_x_out) / (max_x_out-min_x_out);
-			y1 = (y1-min_y_out) / (max_y_out-min_y_out);
-
-			/* Output within range */
-			if (0 <= x1 && x1 <= 1 && 0 <= y1 && y1 <= 1) {
-				/* Round to nearest integer */
-				i1 = 0.5 + (out_height-1) - y1 * (out_height-1);
-				j1 = 0.5 + x1 * (out_width-1);
-
-				c0.x = j0;
-				c0.y = i0;
-
-				/* Create coordinate list if it doesn't exist */
-				#pragma omp critical
-				{
-					if (mapping[i1] == NULL) {
-						mapping[i1] = calloc(out_width, sizeof(**mapping));
-					}
+			/* Create coordinate list if it doesn't exist */
+			#pragma omp critical
+			{
+				if (mapping[i1] == NULL) {
+					mapping[i1] = calloc(out_width, sizeof(**mapping));
 				}
-				#pragma omp critical
-				{
-					if (mapping[i1][j1] == NULL) {
-						mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
-					}
+			}
+			#pragma omp critical
+			{
+				if (mapping[i1][j1] == NULL) {
+					mapping[i1][j1] = clist_create(OUTPUT_MAP_INITIAL_CAP);
 				}
+			}
 
-				#pragma omp critical
-				{
-					clist_add(mapping[i1][j1], c0);
-				}
+			#pragma omp critical
+			{
+				clist_add(mapping[i1][j1], c0);
 			}
 		}
 	}
 
 	/* Set output pixels and destroy coordinate lists */
-	output = rgbaimg_create(out_width, out_height);
 	for (i0 = 0; i0 < out_height; i0++) {
 		if (mapping[i0] != NULL) {
 			for (j0 = 0; j0 < out_width; j0++) {
@@ -212,25 +230,12 @@ void imprint_ext(
 		double complex min, double complex max) {
 	size_t width, height;
 	size_t i, j;
-	double x, y;
 	double complex z;
-	double min_x, max_x;
-	double min_y, max_y;
-
-	min_x = creal(min);
-	max_x = creal(max);
-	min_y = cimag(min);
-	max_y = cimag(max);
 
 	rgbaimg_get_dimensions(canvas, &width, &height);
 	for (i = 0; i < height; i++) {
-		y = (double) (height-1 - i) / (height-1);
-		y = y * max_y + (1-y) * min_y;
 		for (j = 0; j < width; j++) {
-			x = (double) j / (width-1);
-			x = x * max_x + (1-x) * min_x;
-
-			z = x + y*1i;
+			z = coord_to_complex(canvas, j, i, min, max);
 			rgbaimg_set_pixel(canvas, j, i, color(z, arg));
 		}
 	}

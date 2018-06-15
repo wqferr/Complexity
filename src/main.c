@@ -36,7 +36,7 @@ double complex cexp_taylor(double complex z, double t) {
 
 double complex f(double complex z, const void *arg) {
 	double t = *((const double *) arg);
-	return cexp_taylor(z, t);
+	return cpow(z, clerp(1, 2, t));
 }
 
 rgba_pixel imprint_x2(double complex z, const void *arg) {
@@ -128,8 +128,8 @@ rgba_image *create_frame(double progress, const void *arg) {
 	rgbaimg_get_dimensions(input, &w, &h);
 	return warp_ext(
 		input, &f, &progress,
-		(-M_PI - M_PI*1i), (+M_PI + M_PI*1i),
-		(-4-4i), (+4+4i),
+		(-1-1i), (+1+1i),
+		(-1-1i), (+1+1i),
 		w, h);
 }
 

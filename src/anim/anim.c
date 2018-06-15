@@ -28,7 +28,7 @@ void animate(
     }
 
     #pragma omp parallel for\
-            num_threads(2)\
+            num_threads(4)\
             private(output, progress)\
             shared(arg, create_frame, smooth, n_frames, out_dir)
     for (cur_frame = 0; cur_frame < n_frames; cur_frame++) {
