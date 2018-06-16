@@ -77,6 +77,12 @@ int create_imprint(int argc, char *const argv[]) {
 		out, (-1-1i), (+1+1i),
 		black,
 		(-0.5-0.5i), (+0.5+0.5i));
+	imprint_circle(
+		out, (-1-1i), (+1+1i),
+		white,
+		(0.5+0i),
+		0.0, 1.0,
+		M_PI_2, M_PI);
 	imprint_line(
 		out, (-1-1i), (+1+1i),
 		white, 0.1,

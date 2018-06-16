@@ -14,5 +14,10 @@ void imprint_rect(
     rgba_image *canvas, double complex min, double complex max,
     rgba_pixel color,
     double complex rect_min, double complex rect_max);
+void imprint_circle(
+    rgba_image *canvas, double complex min, double complex max,
+    rgba_pixel color,
+    double complex center, double min_radius, double max_radius,
+    double arc_start, double arc_end);
 
 #endif

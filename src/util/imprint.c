@@ -9,9 +9,6 @@ typedef struct {
 
     double margin;
     rgba_pixel color;
-
-    double complex min;
-    double complex max;
 } imprint_line_data;
 
 void _do_imprint_line(rgba_pixel *out, double complex z, const void *arg) {
@@ -37,9 +34,6 @@ void imprint_line(
 
         .margin = margin,
         .color = color,
-
-        .min = min,
-        .max = max
     };
     imprint_ext(canvas, min, max, &_do_imprint_line, &data);
 }
@@ -50,9 +44,6 @@ typedef struct {
     double complex rect_max;
 
     rgba_pixel color;
-
-    double complex min;
-    double complex max;
 } imprint_rect_data;
 
 void _do_imprint_rect(rgba_pixel *out, complex double z, const void *arg) {
@@ -75,9 +66,50 @@ void imprint_rect(
         .rect_max = rect_max,
 
         .color = color,
-
-        .min = min,
-        .max = max
     };
     imprint_ext(canvas, min, max, &_do_imprint_rect, &data);
+}
+
+
+typedef struct {
+    double complex center;
+    double min_radius;
+    double max_radius;
+    double arc_start;
+    double arc_end;
+
+    rgba_pixel color;
+} imprint_circle_data;
+
+void _do_imprint_circle(rgba_pixel *out, double complex z, const void *arg) {
+    imprint_circle_data data = *((const imprint_circle_data *) arg);
+    double x = creal(z);
+    double y = cimag(z);
+    double cx = creal(data.center);
+    double cy = cimag(data.center);
+    double dx = x - cx;
+    double dy = y - cy;
+    double dist_to_center = sqrt(dx*dx + dy*dy);
+    double angle = atan2(dy, dx);
+
+    if (dist_to_center >= data.min_radius && dist_to_center <= data.max_radius
+            && angle >= data.arc_start && angle <= data.arc_end) {
+        *out = data.color;
+    }
+}
+
+void imprint_circle(
+        rgba_image *canvas, double complex min, double complex max,
+        rgba_pixel color,
+        double complex center, double min_radius, double max_radius,
+        double arc_start, double arc_end) {
+    imprint_circle_data data = {
+        .center = center,
+        .min_radius = min_radius,
+        .max_radius = max_radius,
+        .arc_start = arc_start,
+        .arc_end = arc_end,
+        .color = color
+    };
+    imprint_ext(canvas, min, max, &_do_imprint_circle, &data);
 }
