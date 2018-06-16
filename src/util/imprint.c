@@ -18,8 +18,10 @@ void _do_imprint_line(rgba_pixel *out, double complex z, const void *arg) {
     imprint_line_data data = *((const imprint_line_data *) arg);
     double x = creal(z);
     double y = cimag(z);
+    double dist_to_line = fabs(x*data.x_coeff + y*data.y_coeff + data.indep_coeff);
+    dist_to_line /= sqrt(data.x_coeff*data.x_coeff + data.y_coeff*data.y_coeff);
 
-    if (fabs(x*data.x_coeff + y*data.y_coeff + data.indep_coeff) < data.margin) {
+    if (dist_to_line < data.margin) {
         *out = data.color;
     }
 }

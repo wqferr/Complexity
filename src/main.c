@@ -25,61 +25,35 @@
 #define OUTPUT_FPS 60
 
 
-double complex cexp_taylor(double complex z, double t) {
-	double complex out = clerp(0, 1, t) + z;
-	int i, f = 1;
-	for (i = 2; i < 10; i++) {
-		f *= i;
-		out += clerp(0, cpow(z, i)/f, t);
-	}
-	return out;
-}
-
 double complex f(double complex z, const void *arg) {
 	double t = *((const double *) arg);
-	return cpow(z, clerp(1, 2, t));
-}
-
-rgba_pixel imprint_x2(double complex z, const void *arg) {
-	rgba_pixel out = { .r = 0, .g = 0, .b = 0, .a = 255 };
-	double margin = *((const double *) arg);
-	double x = creal(z);
-	double y = cimag(z);
-
-	if (fabs(x*x - y) < margin) {
-		out.r = 255;
-		out.g = 255;
-		out.b = 255;
-	}
-
-	return out;
+	return cpow(z, clerp(1, 3, t));
 }
 
 void clean_dir(const char *path);
 
-rgba_image *read_input_img(int argc, char *const argv[]);
+void read_input(int argc, char *const argv[], rgba_image **img, size_t *n_frames);
 rgba_image *create_frame(double progress, const void *arg);
 
-int main_test_imprint(int argc, char *const argv[]);
-int main_create_warp_anim(int argc, char *const argv[]);
+int create_imprint(int argc, char *const argv[]);
+int create_anim(int argc, char *const argv[]);
 
 int main(int argc, char *const argv[]) {
-	return main_test_imprint(argc, argv);
+	int c = getopt(argc, argv, "sa");
+	if (c == 's') {
+		return create_imprint(argc, argv);
+	} else {
+		return create_anim(argc, argv);
+	}
 }
 
-int main_create_warp_anim(int argc, char *const argv[]) {
+int create_anim(int argc, char *const argv[]) {
 	rgba_image *in_img;
-	float out_duration;
 	size_t n_frames;
 	size_t inwidth, inheight;
 
-	in_img = read_input_img(argc, argv);
+	read_input(argc, argv, &in_img, &n_frames);
 	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
-	if (getopt(argc, argv, "t:") != -1) {
-		sscanf(optarg, "%f", &out_duration);
-		n_frames = out_duration * OUTPUT_FPS;
-	}
-
 	omp_set_nested(true);
 	
 	clean_dir(FRAMES_OUTPUT_DIR);
@@ -93,7 +67,7 @@ int main_create_warp_anim(int argc, char *const argv[]) {
 	return 0;
 }
 
-int main_test_imprint(int argc, char *const argv[]) {
+int create_imprint(int argc, char *const argv[]) {
 	rgba_image *out;
 	rgba_pixel white = { .r = 255, .g = 255, .b = 255, .a = 127 };
 	rgba_pixel black = { .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -106,11 +80,15 @@ int main_test_imprint(int argc, char *const argv[]) {
 	imprint_line(
 		out, (-1-1i), (+1+1i),
 		white, 0.1,
-		1, -1, 0);
+		1, -0.5, 0);
 	imprint_line(
 		out, (-1-1i), (+1+1i),
 		white, 0.1,
 		1, 1, 0);
+	imprint_line(
+		out, (-1-1i), (+1+1i),
+		white, 0.1,
+		1, 0, 0);
 	png_save_to_file(out, "img/imprint.png");
 	rgbaimg_destroy(out);
 
@@ -118,21 +96,29 @@ int main_test_imprint(int argc, char *const argv[]) {
 }
 
 
-rgba_image *read_input_img(int argc, char *const argv[]) {
+void read_input(int argc, char *const argv[], rgba_image **img, size_t *n_frames) {
 	char *imgid;
 	char *path;
-	rgba_image *input;
+	int c;
+	float out_duration;
 
-	if (getopt(argc, argv, "i:") != -1) {
-		imgid = strdup(optarg);
+	while ((c = getopt(argc, argv, "i:t:")) != -1) {
+		switch (c) {
+			case 't':
+				sscanf(optarg, "%f", &out_duration);
+				*n_frames = out_duration * OUTPUT_FPS;
+				break;
+			case 'i':
+				imgid = strdup(optarg);
+				break;
+		}
 	}
 
 	sprintf_alloc(&path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
-	png_load_from_file(&input, path);
+	png_load_from_file(img, path);
 
 	free(imgid);
 	free(path);
-	return input;
 }
 
 rgba_image *create_frame(double progress, const void *arg) {
