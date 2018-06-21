@@ -8,8 +8,8 @@
 
 void imprint_line(
     rgba_image *canvas, double complex min, double complex max,
-    rgba_pixel color, double margin,
-    double x_coeff, double y_coeff, double indep_coeff);
+    rgba_pixel color,
+    double x_coeff, double y_coeff, double indep_coeff, double width);
 void imprint_rect(
     rgba_image *canvas, double complex min, double complex max,
     rgba_pixel color,
@@ -19,5 +19,12 @@ void imprint_circle(
     rgba_pixel color,
     double complex center, double min_radius, double max_radius,
     double arc_start, double arc_end);
+void imprint_line_segment(
+    rgba_image *canvas,
+    double complex min, double complex max,
+    rgba_pixel color,
+    double x_coeff, double y_coeff,
+    double complex center,
+    double width, double length);
 
 #endif

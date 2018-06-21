@@ -30,21 +30,22 @@ double complex f(double complex z, const void *arg) {
 	return cpow(z, clerp(1, 3, t));
 }
 
+double complex heart_f(double complex z, const void *arg) {
+	double t = *((const double *) arg);
+	return cpow(z, clerp(5, 1, t));
+}
+
 void clean_dir(const char *path);
 
 void read_input(int argc, char *const argv[], rgba_image **img, size_t *n_frames);
 rgba_image *create_frame(double progress, const void *arg);
+void imprint_heart_thing(rgba_pixel *color, double complex z, const void *arg);
 
 int create_imprint(int argc, char *const argv[]);
 int create_anim(int argc, char *const argv[]);
 
 int main(int argc, char *const argv[]) {
-	int c = getopt(argc, argv, "sa");
-	if (c == 's') {
-		return create_imprint(argc, argv);
-	} else {
-		return create_anim(argc, argv);
-	}
+	return create_imprint(argc, argv);
 }
 
 int create_anim(int argc, char *const argv[]) {
@@ -69,36 +70,91 @@ int create_anim(int argc, char *const argv[]) {
 
 int create_imprint(int argc, char *const argv[]) {
 	rgba_image *out;
-	rgba_pixel white = { .r = 255, .g = 255, .b = 255, .a = 127 };
-	rgba_pixel black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+	rgba_pixel pink = { .r = 255, .g = 120, .b = 120, .a = 255 };
 
 	out = rgbaimg_create(500, 500);
-	imprint_rect(
-		out, (-1-1i), (+1+1i),
-		black,
-		(-0.5-0.5i), (+0.5+0.5i));
-	imprint_circle(
-		out, (-1-1i), (+1+1i),
-		white,
-		(0.5+0i),
-		0.0, 1.0,
-		M_PI_2, M_PI);
-	imprint_line(
-		out, (-1-1i), (+1+1i),
-		white, 0.1,
-		1, -0.5, 0);
-	imprint_line(
-		out, (-1-1i), (+1+1i),
-		white, 0.1,
-		1, 1, 0);
-	imprint_line(
-		out, (-1-1i), (+1+1i),
-		white, 0.1,
-		1, 0, 0);
+	imprint_ext(
+		out,
+		(-1-1i), (+1+1i),
+		&imprint_heart_thing, &pink);
+	imprint_line_segment(
+		out,
+		(-1-1i), (+1+1i),
+		pink,
+		1, 0, 0+0.62i,
+		0.025, 0.65);
 	png_save_to_file(out, "img/imprint.png");
 	rgbaimg_destroy(out);
 
 	return 0;
+}
+
+
+void imprint_heart_thing(rgba_pixel *color, double complex z, const void *arg) {
+	double x = creal(z);
+	double y = cimag(z) + 0.75;
+	double abs_x = fabs(x);
+	rgba_pixel col = *((const rgba_pixel *) arg);
+
+	if (fabs(abs_x*log(abs_x) - (abs_x - y)*log(y)) < 0.05) {
+		*color = col;
+	}
+}
+
+
+
+void imprint_name(rgba_image *canvas, rgba_pixel color) {
+	double complex d_center = -0.475-0.05i;
+	double d_min_radius = 0.175;
+	double d_max_radius = 0.25;
+	double d_rot = 0.3;
+	double sec_d_rot = 1/cos(d_rot);
+	double csc_d_rot = 1/sin(d_rot);
+	double line_width = (d_max_radius-d_min_radius);
+
+	imprint_circle(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		d_center,
+		d_min_radius, d_max_radius,
+		-M_PI/2+d_rot, M_PI/2+d_rot);
+	imprint_line_segment(
+		canvas, (-1-1i), (+1+1i),
+		color,
+		-csc_d_rot, -sec_d_rot,
+		d_center,
+		line_width, 2*d_max_radius-0.01);
+	imprint_line_segment(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		4, -1,
+		(-0.0625+0i), line_width, 0.5);
+	imprint_line_segment(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		4, 1,
+		(0.0625+0i), line_width, 0.5);
+	imprint_line_segment(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		0, 1,
+		(0+0.125i), 2*line_width/3, 0.25);
+	imprint_line_segment(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		1, 0.4,
+		(0.45+0.15i), line_width, 0.25);
+	imprint_line_segment(
+		canvas,
+		(-1-1i), (+1+1i),
+		color,
+		1, -0.8,
+		(0.5-0.1i), line_width, 0.5);
 }
 
 
@@ -133,6 +189,17 @@ rgba_image *create_frame(double progress, const void *arg) {
 	rgbaimg_get_dimensions(input, &w, &h);
 	return warp_ext(
 		input, &f, &progress,
+		(-1-1i), (+1+1i),
+		(-1-1i), (+1+1i),
+		w, h);
+}
+
+rgba_image *create_heart_frame(double progress, const void *arg) {
+	size_t w, h;
+	const rgba_image *input = (const rgba_image *) arg;
+	rgbaimg_get_dimensions(input, &w, &h);
+	return warp_ext(
+		input, &heart_f, &progress,
 		(-1-1i), (+1+1i),
 		(-1-1i), (+1+1i),
 		w, h);

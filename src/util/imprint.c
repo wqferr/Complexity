@@ -2,12 +2,14 @@
 
 #include <math.h>
 
+#include <stdio.h>
+
 typedef struct {
     double x_coeff;
     double y_coeff;
     double indep_coeff;
 
-    double margin;
+    double width;
     rgba_pixel color;
 } imprint_line_data;
 
@@ -18,21 +20,21 @@ void _do_imprint_line(rgba_pixel *out, double complex z, const void *arg) {
     double dist_to_line = fabs(x*data.x_coeff + y*data.y_coeff + data.indep_coeff);
     dist_to_line /= sqrt(data.x_coeff*data.x_coeff + data.y_coeff*data.y_coeff);
 
-    if (dist_to_line < data.margin) {
+    if (dist_to_line < data.width/2) {
         *out = data.color;
     }
 }
 
 void imprint_line(
         rgba_image *canvas, double complex min, double complex max,
-        rgba_pixel color, double margin,
-        double x_coeff, double y_coeff, double indep_coeff) {
+        rgba_pixel color,
+        double x_coeff, double y_coeff, double indep_coeff, double width) {
     imprint_line_data data = {
         .x_coeff = x_coeff,
         .y_coeff = y_coeff,
         .indep_coeff = indep_coeff,
 
-        .margin = margin,
+        .width = width,
         .color = color,
     };
     imprint_ext(canvas, min, max, &_do_imprint_line, &data);
@@ -93,7 +95,7 @@ void _do_imprint_circle(rgba_pixel *out, double complex z, const void *arg) {
     double angle = atan2(dy, dx);
 
     if (dist_to_center >= data.min_radius && dist_to_center <= data.max_radius
-            && angle >= data.arc_start && angle <= data.arc_end) {
+            && (angle >= data.arc_start && angle <= data.arc_end)) {
         *out = data.color;
     }
 }
@@ -112,4 +114,65 @@ void imprint_circle(
         .color = color
     };
     imprint_ext(canvas, min, max, &_do_imprint_circle, &data);
+}
+
+typedef struct {
+    double x_coeff_main_axis;
+    double y_coeff_main_axis;
+    double indep_coeff_main_axis;
+
+    double x_coeff_coaxis;
+    double y_coeff_coaxis;
+    double indep_coeff_coaxis;
+
+    double length;
+    double width;
+
+    double complex center;
+
+    rgba_pixel color;
+} imprint_line_segment_data;
+
+
+void _do_imprint_line_segment(rgba_pixel *out, double complex z, const void *arg) {
+    imprint_line_segment_data data = *((const imprint_line_segment_data *) arg);
+    double x = creal(z);
+    double y = cimag(z);
+    double dist_to_main_axis = fabs(
+        x*data.x_coeff_main_axis + y*data.y_coeff_main_axis + data.indep_coeff_main_axis);
+    double dist_to_coaxis = fabs(
+        x*data.x_coeff_coaxis + y*data.y_coeff_coaxis + data.indep_coeff_coaxis);
+
+    dist_to_main_axis /= sqrt(
+        data.x_coeff_main_axis*data.x_coeff_main_axis + data.y_coeff_main_axis*data.y_coeff_main_axis);
+    dist_to_coaxis /= sqrt(
+        data.x_coeff_coaxis*data.x_coeff_coaxis + data.y_coeff_coaxis*data.y_coeff_coaxis);
+
+    if (dist_to_main_axis <= data.width/2 && dist_to_coaxis <= data.length/2) {
+        *out = data.color;
+    }
+}
+
+void imprint_line_segment(
+        rgba_image *canvas,
+        double complex min, double complex max,
+        rgba_pixel color,
+        double x_coeff, double y_coeff,
+        double complex center,
+        double width, double length) {
+    imprint_line_segment_data data = {
+        .x_coeff_main_axis = x_coeff,
+        .y_coeff_main_axis = y_coeff,
+        .indep_coeff_main_axis = -(x_coeff*creal(center) + y_coeff*cimag(center)),
+
+        .x_coeff_coaxis = y_coeff,
+        .y_coeff_coaxis = -x_coeff,
+        .indep_coeff_coaxis = x_coeff*cimag(center) - y_coeff*creal(center),
+
+        .color = color,
+
+        .width = width,
+        .length = length
+    };
+    imprint_ext(canvas, min, max, &_do_imprint_line_segment, &data);
 }
