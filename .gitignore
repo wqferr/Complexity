@@ -2,6 +2,7 @@
 /src/.dep/*
 /lib/*
 /build/*
+/.vscode/
 out.log
 !**/.gitkeep
 **/*.png

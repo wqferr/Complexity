@@ -7,6 +7,10 @@
 #include <omp.h>
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI (3.14159265358979323846)
+#endif
+
 #include "img/rgbaimg.h"
 #include "img/pngio.h"
 
@@ -75,11 +79,11 @@ int create_imprint(int argc, char *const argv[]) {
 	out = rgbaimg_create(500, 500);
 	imprint_ext(
 		out,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		&imprint_heart_thing, &pink);
 	imprint_line_segment(
 		out,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		pink,
 		1, 0, 0+0.62i,
 		0.025, 0.65);
@@ -114,44 +118,44 @@ void imprint_name(rgba_image *canvas, rgba_pixel color) {
 
 	imprint_circle(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		d_center,
 		d_min_radius, d_max_radius,
 		-M_PI/2+d_rot, M_PI/2+d_rot);
 	imprint_line_segment(
-		canvas, (-1-1i), (+1+1i),
+		canvas, (-1-1.0i), (+1+1.0i),
 		color,
 		-csc_d_rot, -sec_d_rot,
 		d_center,
 		line_width, 2*d_max_radius-0.01);
 	imprint_line_segment(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		4, -1,
-		(-0.0625+0i), line_width, 0.5);
+		(-0.0625+0.0i), line_width, 0.5);
 	imprint_line_segment(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		4, 1,
-		(0.0625+0i), line_width, 0.5);
+		(0.0625+0.0i), line_width, 0.5);
 	imprint_line_segment(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		0, 1,
 		(0+0.125i), 2*line_width/3, 0.25);
 	imprint_line_segment(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		1, 0.4,
 		(0.45+0.15i), line_width, 0.25);
 	imprint_line_segment(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color,
 		1, -0.8,
 		(0.5-0.1i), line_width, 0.5);
@@ -189,8 +193,8 @@ rgba_image *create_frame(double progress, const void *arg) {
 	rgbaimg_get_dimensions(input, &w, &h);
 	return warp_ext(
 		input, &f, &progress,
-		(-1-1i), (+1+1i),
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
+		(-1-1.0i), (+1+1.0i),
 		w, h);
 }
 
@@ -200,8 +204,8 @@ rgba_image *create_heart_frame(double progress, const void *arg) {
 	rgbaimg_get_dimensions(input, &w, &h);
 	return warp_ext(
 		input, &heart_f, &progress,
-		(-1-1i), (+1+1i),
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
+		(-1-1.0i), (+1+1.0i),
 		w, h);
 }
 
