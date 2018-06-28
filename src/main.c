@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <omp.h>
 #include <math.h>
+#include <complex.h>
 
 #ifndef M_PI
 #define M_PI (3.14159265358979323846)
@@ -13,6 +14,7 @@
 
 #include "img/rgbaimg.h"
 #include "img/pngio.h"
+#include "img/hsv.h"
 
 #include "core/cfunction.h"
 
@@ -23,191 +25,119 @@
 #include "util/imprint.h"
 
 #define IMG_PATH_PREFIX "img/"
-#define IMG_PATH_SUFFIX ".png"
+#define IMG_SUFFIX ".png"
 
 #define FRAMES_OUTPUT_DIR "img/out/"
-#define OUTPUT_FPS 60
+#define DEFAULT_OUTPUT_FPS 60
+#define DEFAULT_OUT_FILE_NAME ("out" IMG_SUFFIX)
 
 
-double complex f(double complex z, const void *arg) {
-	double t = *((const double *) arg);
-	return cpow(z, clerp(1, 3, t));
-}
-
-double complex heart_f(double complex z, const void *arg) {
-	double t = *((const double *) arg);
-	return cpow(z, clerp(5, 1, t));
-}
-
-void clean_dir(const char *path);
-
-void read_input(int argc, char *const argv[], rgba_image **img, size_t *n_frames);
+void init_input(rgba_image **input);
+void init_output(rgba_image **output);
+void do_stuff(const rgba_image *input, rgba_image *output);
 rgba_image *create_frame(double progress, const void *arg);
-void imprint_heart_thing(rgba_pixel *color, double complex z, const void *arg);
 
-int create_imprint(int argc, char *const argv[]);
-int create_anim(int argc, char *const argv[]);
+double complex f(double complex z);
+void complex_to_hue(rgba_pixel *out, double complex z, const void *arg);
+
 
 int main(int argc, char *const argv[]) {
-	return create_imprint(argc, argv);
-}
+	rgba_image *input;
+	rgba_image *output;
+	int opt;
+	int framerate = 0;
+	int duration = 0;
+	char *outfilename = NULL;
+	char *outfilepath = NULL;
+	(void) framerate;
+	(void) duration;
 
-int create_anim(int argc, char *const argv[]) {
-	rgba_image *in_img;
-	size_t n_frames;
-	size_t inwidth, inheight;
-
-	read_input(argc, argv, &in_img, &n_frames);
-	rgbaimg_get_dimensions(in_img, &inwidth, &inheight);
-	omp_set_nested(true);
-	
-	clean_dir(FRAMES_OUTPUT_DIR);
-
-	animate(
-		&create_frame, in_img,
-		&anim_time_smootheststep, n_frames,
-		"img/out/");
-
-	rgbaimg_destroy(in_img);
-	return 0;
-}
-
-int create_imprint(int argc, char *const argv[]) {
-	rgba_image *out;
-	rgba_pixel pink = { .r = 255, .g = 120, .b = 120, .a = 255 };
-
-	out = rgbaimg_create(500, 500);
-	imprint_ext(
-		out,
-		(-1-1.0i), (+1+1.0i),
-		&imprint_heart_thing, &pink);
-	imprint_line_segment(
-		out,
-		(-1-1.0i), (+1+1.0i),
-		pink,
-		1, 0, 0+0.62i,
-		0.025, 0.65);
-	png_save_to_file(out, "img/imprint.png");
-	rgbaimg_destroy(out);
-
-	return 0;
-}
-
-
-void imprint_heart_thing(rgba_pixel *color, double complex z, const void *arg) {
-	double x = creal(z);
-	double y = cimag(z) + 0.75;
-	double abs_x = fabs(x);
-	rgba_pixel col = *((const rgba_pixel *) arg);
-
-	if (fabs(abs_x*log(abs_x) - (abs_x - y)*log(y)) < 0.05) {
-		*color = col;
-	}
-}
-
-
-
-void imprint_name(rgba_image *canvas, rgba_pixel color) {
-	double complex d_center = -0.475-0.05i;
-	double d_min_radius = 0.175;
-	double d_max_radius = 0.25;
-	double d_rot = 0.3;
-	double sec_d_rot = 1/cos(d_rot);
-	double csc_d_rot = 1/sin(d_rot);
-	double line_width = (d_max_radius-d_min_radius);
-
-	imprint_circle(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		d_center,
-		d_min_radius, d_max_radius,
-		-M_PI/2+d_rot, M_PI/2+d_rot);
-	imprint_line_segment(
-		canvas, (-1-1.0i), (+1+1.0i),
-		color,
-		-csc_d_rot, -sec_d_rot,
-		d_center,
-		line_width, 2*d_max_radius-0.01);
-	imprint_line_segment(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		4, -1,
-		(-0.0625+0.0i), line_width, 0.5);
-	imprint_line_segment(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		4, 1,
-		(0.0625+0.0i), line_width, 0.5);
-	imprint_line_segment(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		0, 1,
-		(0+0.125i), 2*line_width/3, 0.25);
-	imprint_line_segment(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		1, 0.4,
-		(0.45+0.15i), line_width, 0.25);
-	imprint_line_segment(
-		canvas,
-		(-1-1.0i), (+1+1.0i),
-		color,
-		1, -0.8,
-		(0.5-0.1i), line_width, 0.5);
-}
-
-
-void read_input(int argc, char *const argv[], rgba_image **img, size_t *n_frames) {
-	char *imgid;
-	char *path;
-	int c;
-	float out_duration;
-
-	while ((c = getopt(argc, argv, "i:t:")) != -1) {
-		switch (c) {
-			case 't':
-				sscanf(optarg, "%f", &out_duration);
-				*n_frames = out_duration * OUTPUT_FPS;
+	while ((opt = getopt(argc, argv, "f:t:o:")) != -1) {
+		switch (opt) {
+			/*
+			TODO implement fps control
+			case 'f':
+				sscanf(optarg, "%d", &framerate);
+				if (framerate <= 0) {
+					fprintf(stderr, "Framerate must be positive.");
+					abort();
+				}
 				break;
-			case 'i':
-				imgid = strdup(optarg);
+			*/
+			case 't':
+				sscanf(optarg, "%d", &duration);
+				if (duration <= 0) {
+					fprintf(stderr, "Duration must be positive.");
+					abort();
+				}
+				break;
+			case 'o':
+				outfilename = strdup(optarg);
 				break;
 		}
 	}
+	if (outfilename == NULL) {
+		outfilename = strdup(DEFAULT_OUT_FILE_NAME);
+	}
+	sprintf_alloc(&outfilepath, "%s%s", IMG_PATH_PREFIX, outfilename);
 
-	sprintf_alloc(&path, "%s%s%s", IMG_PATH_PREFIX, imgid, IMG_PATH_SUFFIX);
-	png_load_from_file(img, path);
+	init_input(&input);
+	init_output(&output);
 
-	free(imgid);
-	free(path);
+	do_stuff(input, output);
+	png_save_to_file(output, outfilepath);
+
+	rgbaimg_destroy(output);
+	rgbaimg_destroy(input);
+	free(outfilepath);
+	free(outfilename);
+
+	return 0;
 }
+
+
+void init_input(rgba_image **input) {
+	*input = rgbaimg_create(512, 512);
+}
+
+
+void init_output(rgba_image **output) {
+	*output = rgbaimg_create(512, 512);
+}
+
+
+void do_stuff(const rgba_image *input, rgba_image *output) {
+	(void) input;
+	imprint_ext(
+		output,
+		-2-2.0i, +2+2.0i,
+		&complex_to_hue, NULL);
+}
+
+
+double complex f(double complex z) {
+	return 1.0 - z*z*z;
+}
+
+
+void complex_to_hue(rgba_pixel *out, double complex z, const void *arg) {
+	float h, s, v;
+	z = f(z);
+	h = 360.0f * (carg(z) / (2*M_PI));
+	h = fmodf(h + 360.0f, 360.0f);
+	s = 1.0f;
+	v = 1-exp(-cabs(z));
+
+	hsv_to_rgb(h, s, v, out);
+	out->a = 255;
+}
+
 
 rgba_image *create_frame(double progress, const void *arg) {
-	size_t w, h;
-	const rgba_image *input = (const rgba_image *) arg;
-	rgbaimg_get_dimensions(input, &w, &h);
-	return warp_ext(
-		input, &f, &progress,
-		(-1-1.0i), (+1+1.0i),
-		(-1-1.0i), (+1+1.0i),
-		w, h);
+	(void) arg;
+	return NULL;
 }
 
-rgba_image *create_heart_frame(double progress, const void *arg) {
-	size_t w, h;
-	const rgba_image *input = (const rgba_image *) arg;
-	rgbaimg_get_dimensions(input, &w, &h);
-	return warp_ext(
-		input, &heart_f, &progress,
-		(-1-1.0i), (+1+1.0i),
-		(-1-1.0i), (+1+1.0i),
-		w, h);
-}
 
 void clean_dir(const char *path) {
 	char *cmd;
