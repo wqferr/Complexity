@@ -39,6 +39,7 @@ void animate(
         progress = smooth((double) cur_frame / n_frames);
         output = create_frame(progress, arg);
         _save_frame(output, cur_frame, n_frames, out_dir, &len_n_frames);
+        rgbaimg_destroy(output);
     }
     fprintf(stderr, "Done creating frames\n");
     
