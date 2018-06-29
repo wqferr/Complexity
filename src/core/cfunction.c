@@ -76,7 +76,7 @@ double complex coord_to_complex(
 
 	y = (1-ty)*y_min + ty*y_max;
 	x = (1-tx)*x_min + tx*x_max;
-	return x + y*1i;
+	return x + y*1.0i;
 }
 
 bool complex_to_coord(
@@ -109,8 +109,8 @@ bool complex_to_coord(
 rgba_image *warp(const rgba_image *input, complex_f transformation) {
 	return warp_ext(
 		input, transformation, NULL,
-		0+0j, 1+1j,
-		0+0j, 1+1j,
+		0+0.0j, 1+1.0j,
+		0+0.0j, 1+1.0j,
 		0, 0);
 }
 
@@ -220,7 +220,7 @@ rgba_image *warp_ext(
 void imprint(rgba_image *canvas, color_f color) {
 	imprint_ext(
 		canvas,
-		(-1-1i), (+1+1i),
+		(-1-1.0i), (+1+1.0i),
 		color, NULL);
 }
 
