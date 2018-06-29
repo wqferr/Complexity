@@ -126,11 +126,6 @@ void do_stuff(
 		create_frame, NULL,
 		anim_time_smootheststep,
 		n_frames, path);
-	// imprint_ext(
-	// 	output,
-	// 	-2-2.0i, +2+2.0i,
-	// 	&complex_to_hue, NULL);
-	// png_save_to_file(output, path);
 }
 
 
@@ -150,12 +145,9 @@ void complex_to_hue(rgba_pixel *out, double complex z, const void *arg) {
 	double angle2 = lerp(0, 4*M_PI/3, t);
 	double exponent1 = lerp(0, 1, angle1 / (M_PI / 2));
 	double exponent2 = lerp(0, 1, angle2 / (M_PI / 2));
-	double complex fz = (1+z) * (1 + z*cpow(1.0i, exponent1));
-	fz *= (1 + z*cpow(1.0i, exponent2));
+	double complex fz = (1 - z) * (1 - z*cpow(1.0i, exponent1));
+	fz *= (1 - z*cpow(1.0i, exponent2));
 
-	// double p = lerp(1, 3, t);
-	// z = 1 + cpow(z, p);
-	// z = clerp_spiral(f0(z), f1(z), t);
 	h = 360.0f * (carg(fz) / (2*M_PI));
 	h = fmodf(h + 360.0f, 360.0f);
 	s = 1.0f;
