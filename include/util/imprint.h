@@ -26,5 +26,9 @@ void imprint_line_segment(
     double x_coeff, double y_coeff,
     double complex center,
     double width, double length);
+void imprint_function_as_hsv(
+    rgba_image *canvas,
+    double complex min, double complex max,
+    complex_f f, const void *arg);
 
 #endif

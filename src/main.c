@@ -129,17 +129,7 @@ void do_stuff(
 }
 
 
-double complex f0(double complex z) {
-	return z;
-}
-
-double complex f1(double complex z) {
-	return 1.0 - z*z*z;
-}
-
-
-void complex_to_hue(rgba_pixel *out, double complex z, const void *arg) {
-	float h, s, v;
+double complex lerp_to_cube(double complex z, const void *arg) {
 	double t = *((const double *) arg);
 	double angle1 = lerp(0, 2*M_PI/3, t);
 	double angle2 = lerp(0, 4*M_PI/3, t);
@@ -148,23 +138,17 @@ void complex_to_hue(rgba_pixel *out, double complex z, const void *arg) {
 	double complex fz = (1 - z) * (1 - z*cpow(1.0i, exponent1));
 	fz *= (1 - z*cpow(1.0i, exponent2));
 
-	h = 360.0f * (carg(fz) / (2*M_PI));
-	h = fmodf(h + 360.0f, 360.0f);
-	s = 1.0f;
-	v = 1-exp(-cabs(fz));
-
-	hsv_to_rgb(h, s, v, out);
-	out->a = 255;
+	return fz;
 }
 
 
 rgba_image *create_frame(double progress, const void *arg) {
 	rgba_image *frame = rgbaimg_create(512, 512);
 	(void) arg;
-	imprint_ext(
+	imprint_function_as_hsv(
 		frame,
 		-2-2.0i, +2+2.0i,
-		&complex_to_hue,
+		&lerp_to_cube,
 		&progress);
 	
 	return frame;

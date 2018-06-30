@@ -2,7 +2,8 @@
 
 #include <math.h>
 
-#include <stdio.h>
+#include "core/cfunction.h"
+#include "img/hsv.h"
 
 typedef struct {
     double x_coeff;
@@ -175,4 +176,33 @@ void imprint_line_segment(
         .length = length
     };
     imprint_ext(canvas, min, max, &_do_imprint_line_segment, &data);
+}
+
+
+typedef struct {
+    complex_f f;
+    const void *arg;
+} imprint_function_as_hsv_data;
+
+void _do_imprint_function_as_hsv(
+        rgba_pixel *out, double complex z, const void *arg) {
+    imprint_function_as_hsv_data data = 
+        *((const imprint_function_as_hsv_data *) arg);
+    float h, s, v;
+    complex_to_color(data.f(z, data.arg), &h, &v);
+    s = 1.0f;
+    hsv_to_rgb(h, s, v, out);
+    out->a = 255;
+}
+
+
+void imprint_function_as_hsv(
+        rgba_image *canvas,
+        double complex min, double complex max,
+        complex_f f, const void *arg) {
+    imprint_function_as_hsv_data data = {
+        .f = f,
+        .arg = arg
+    };
+    imprint_ext(canvas, min, max, &_do_imprint_function_as_hsv, &data);
 }

@@ -21,6 +21,10 @@ bool complex_to_coord(
 	double complex z,
 	double complex min, double complex max,
 	size_t *x, size_t *y);
+void complex_to_color(
+	double complex z,
+	float *hue,
+	float *value);
 
 rgba_image *warp(const rgba_image *input, complex_f transformation);
 rgba_image *warp_ext(

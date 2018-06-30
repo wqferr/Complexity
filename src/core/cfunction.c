@@ -2,6 +2,9 @@
 
 #include <stdlib.h>
 #include <omp.h>
+#include <math.h>
+
+#include "util/pi.h"
 
 #include "struct/coordlist.h"
 
@@ -118,6 +121,17 @@ bool complex_to_coord(
 
 	return true;
 }
+
+
+void complex_to_color(
+		double complex z,
+		float *hue,
+		float *value) {
+	*hue = 360.0f * (carg(z) / (2*M_PI));
+	*hue = fmodf(*hue + 360.0f, 360.0f);
+	*value = 1-exp(-cabs(z));
+}
+
 
 rgba_image *warp(const rgba_image *input, complex_f transformation) {
 	return warp_ext(
