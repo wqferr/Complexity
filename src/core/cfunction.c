@@ -133,9 +133,10 @@ void complex_to_color(
 }
 
 
-rgba_image *warp(const rgba_image *input, complex_f transformation) {
+rgba_image *warp(
+		const rgba_image *input, complex_f transformation, const void *arg) {
 	return warp_ext(
-		input, transformation, NULL,
+		input, transformation, arg,
 		0+0.0j, 1+1.0j,
 		0+0.0j, 1+1.0j,
 		0, 0);
@@ -244,11 +245,11 @@ rgba_image *warp_ext(
 }
 
 
-void imprint(rgba_image *canvas, color_f color) {
+void imprint(rgba_image *canvas, color_f color, const void *arg) {
 	imprint_ext(
 		canvas,
 		(-1-1.0i), (+1+1.0i),
-		color, NULL);
+		color, arg);
 }
 
 void imprint_ext(

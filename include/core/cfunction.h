@@ -26,7 +26,8 @@ void complex_to_color(
 	float *hue,
 	float *value);
 
-rgba_image *warp(const rgba_image *input, complex_f transformation);
+rgba_image *warp(
+	const rgba_image *input, complex_f transformation, const void *arg);
 rgba_image *warp_ext(
 	const rgba_image *input,
 	complex_f transformation, const void *arg,
@@ -34,7 +35,7 @@ rgba_image *warp_ext(
 	double complex min_out, double complex max_out,
 	size_t out_width, size_t out_height);
 
-void imprint(rgba_image *canvas, color_f color);
+void imprint(rgba_image *canvas, color_f color, const void *arg);
 void imprint_ext(
 	rgba_image *canvas,
 	double complex min, double complex max,

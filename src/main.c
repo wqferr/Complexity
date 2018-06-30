@@ -29,6 +29,10 @@
 #define DEFAULT_OUTPUT_FPS 60
 #define DEFAULT_OUT_FILE_NAME ("out" IMG_SUFFIX)
 
+#ifndef N_ROOTS
+#define N_ROOTS 10
+#endif
+
 
 void init_input(rgba_image **input);
 void init_output(rgba_image **output);
@@ -131,12 +135,14 @@ void do_stuff(
 
 double complex lerp_to_cube(double complex z, const void *arg) {
 	double t = *((const double *) arg);
-	double angle1 = lerp(0, 2*M_PI/3, t);
-	double angle2 = lerp(0, 4*M_PI/3, t);
-	double exponent1 = lerp(0, 1, angle1 / (M_PI / 2));
-	double exponent2 = lerp(0, 1, angle2 / (M_PI / 2));
-	double complex fz = (1 - z) * (1 - z*cpow(1.0i, exponent1));
-	fz *= (1 - z*cpow(1.0i, exponent2));
+	double angle = lerp(0, 2*M_PI / N_ROOTS, t);
+	double exponent = lerp(0, 1, angle / (M_PI / 2));
+	double complex fz = 1;
+	int i;
+
+	for (i = 0; i < N_ROOTS; i++) {
+		fz *= (1 - z*cpow(1.0i, -i * exponent));
+	}
 
 	return fz;
 }
