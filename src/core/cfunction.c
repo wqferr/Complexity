@@ -58,6 +58,19 @@ void _set_out_pixel(
 }
 
 
+double complex f_identity(double complex z, const void *arg) {
+	(void) arg;
+	return z;
+}
+
+
+double complex f_null(double complex z, const void *arg) {
+	(void) z;
+	(void) arg;
+	return 0;
+}
+
+
 double complex coord_to_complex(
 		const rgba_image *img,
 		size_t inx, size_t iny,

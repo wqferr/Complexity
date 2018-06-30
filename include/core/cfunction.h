@@ -9,6 +9,9 @@
 typedef double complex (*complex_f)(double complex z, const void *arg);
 typedef void (*color_f)(rgba_pixel *out, double complex z, const void *arg);
 
+double complex f_identity(double complex z, const void *arg);
+double complex f_null(double complex z, const void *arg);
+
 double complex coord_to_complex(
 	const rgba_image *img,
 	size_t x, size_t y,
